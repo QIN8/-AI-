@@ -1,0 +1,120 @@
+[
+  {
+    "name": "11W 大坝摸金流",
+    "budget": 112500,
+    "mapSlug": "dam",
+    "style": "跑刀",
+    "note": "机密大坝/长弓轻装：听力与格子优先，手枪修人机。示例报价，请按交易行替换。",
+    "featured": true,
+    "items": [
+      "deagle",
+      "qsz92g",
+      "helmet-hearing-3",
+      "armor-tactical-vest",
+      "bag-12",
+      "rig-g01",
+      "med-ifak",
+      "med-splint",
+      "acc-holo"
+    ]
+  },
+  {
+    "name": "11W 均衡续杯",
+    "budget": 112500,
+    "mapSlug": "longbow",
+    "style": "均衡",
+    "note": "21 格雨林包 + QSZ 续杯，适合还在认长弓半区的人。",
+    "featured": true,
+    "items": [
+      "m16a4",
+      "qsz92g",
+      "helmet-hearing-3",
+      "armor-ceramic-3",
+      "bag-rain-21",
+      "rig-g01",
+      "med-ifak",
+      "med-hemo",
+      "acc-holo"
+    ]
+  },
+  {
+    "name": "18W 航天机密经济",
+    "budget": 187500,
+    "mapSlug": "spacecity",
+    "style": "经济",
+    "note": "巴克什/航天机密、永夜大坝同档。假账瞄具把数字抬过 18.75 万。",
+    "featured": true,
+    "items": [
+      "as-val",
+      "m1014",
+      "helmet-6b47",
+      "armor-composite-4",
+      "bag-dash",
+      "rig-assault",
+      "med-ifak",
+      "med-surgery",
+      "acc-lpvo"
+    ]
+  },
+  {
+    "name": "55W 巴克什绝密巷战",
+    "budget": 550000,
+    "mapSlug": "bakshi",
+    "style": "对抗",
+    "note": "五级防护 + 能打折角的步枪，浴场撤离绝密不开，优先巴别塔闸。",
+    "featured": true,
+    "items": [
+      "k416",
+      "vector",
+      "helmet-closed",
+      "armor-titanium-5",
+      "bag-assault-28",
+      "rig-gir",
+      "med-surgery",
+      "med-advanced",
+      "acc-laser-blue"
+    ]
+  },
+  {
+    "name": "60W 航天绝密全能",
+    "budget": 600000,
+    "mapSlug": "spacecity",
+    "style": "全能",
+    "note": "GT1 + HVK-2 结构，社区讨论最多的 60 万骨架。",
+    "featured": true,
+    "items": [
+      "k416",
+      "m1014",
+      "helmet-gt1",
+      "armor-hvk2",
+      "bag-rainhunter",
+      "rig-gir",
+      "med-surgery",
+      "med-pain",
+      "acc-lpvo"
+    ]
+  },
+  {
+    "name": "78W 监狱过线套",
+    "budget": 780000,
+    "mapSlug": "tide-prison",
+    "style": "卡线",
+    "note": "破损高战备头甲 + 机枪/栓狙 + 假账附件，演示如何刚过 78 万。开局记得取装。",
+    "featured": true,
+    "items": [
+      "pkm",
+      "sv98",
+      "helmet-dich",
+      "armor-laosai",
+      "bag-rainhunter",
+      "rig-gir",
+      "med-advanced",
+      "med-stamina",
+      "acc-lpvo",
+      "acc-flashlight",
+      "acc-laser-blue",
+      "buoyancy",
+      "key-lv1"
+    ]
+  }
+]

@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    container_name: delta-ziliao
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: file:/app/data/delta.db
+      NEXT_PUBLIC_SITE_NAME: 三角洲资料站
+    volumes:
+      - delta-data:/app/data
+
+volumes:
+  delta-data:
