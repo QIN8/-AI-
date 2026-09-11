@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Item {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  category    String
+  subcategory String        @default("")
+  rarity      String
+  level       Int           @default(1)
+  buyPrice    Int
+  sellPrice   Int
+  gearValue   Int
+  fakeAdjust  Float         @default(1.0)
+  weight      Float         @default(0)
+  description String        @default("")
+  statsJson   String        @default("{}")
+  slots       LoadoutSlot[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([category])
+  @@index([name])
+}
+
+model MapInfo {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  name       String
+  mode       String   @default("烽火地带")
+  difficulty String
+  entryMin   Int
+  entryNote  String   @default("")
+  summary    String
+  tips       String
+  featured   Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Guide {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  content     String
+  category    String
+  publishedAt DateTime @default(now())
+  featured    Boolean  @default(false)
+}
+
+model Loadout {
+  id        String        @id @default(cuid())
+  name      String
+  budget    Int
+  mapSlug   String        @default("")
+  note      String        @default("")
+  style     String        @default("均衡")
+  featured  Boolean       @default(false)
+  source    String        @default("seed")
+  slots     LoadoutSlot[]
+  createdAt DateTime      @default(now())
+}
+
+model LoadoutSlot {
+  id        String  @id @default(cuid())
+  loadoutId String
+  loadout   Loadout @relation(fields: [loadoutId], references: [id], onDelete: Cascade)
+  slot      String
+  itemId    String
+  item      Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([loadoutId])
+}
+
+model ForumPost {
+  id        String        @id @default(cuid())
+  title     String
+  content   String
+  nickname  String
+  createdAt DateTime      @default(now())
+  replies   ForumReply[]
+
+  @@index([createdAt])
+}
+
+model ForumReply {
+  id        String    @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  content   String
+  nickname  String
+  createdAt DateTime  @default(now())
+
+  @@index([postId])
+}
+
+model Meta {
+  key   String @id
+  value String
+}
