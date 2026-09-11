@@ -10,6 +10,7 @@ services:
       PORT: "3000"
       DATABASE_URL: file:/app/data/delta.db
       NEXT_PUBLIC_SITE_NAME: 三角洲资料站
+      PRICE_SYNC_TTL_MS: "480000"
     volumes:
       - delta-data:/app/data
 

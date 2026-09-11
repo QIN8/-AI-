@@ -7,46 +7,46 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 48;
+
 export default async function ItemsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; page?: string }>;
 }) {
-  const { q = "", category = "all" } = await searchParams;
-  const items = await prisma.item.findMany({
-    where: {
-      AND: [
-        category !== "all" ? { category } : {},
-        q
-          ? {
-              OR: [
-                { name: { contains: q } },
-                { slug: { contains: q } },
-                { subcategory: { contains: q } },
-                { description: { contains: q } },
-              ],
-            }
-          : {},
-      ],
-    },
-    orderBy: [{ category: "asc" }, { gearValue: "desc" }],
-  });
+  const { q = "", category = "gun", page = "1" } = await searchParams;
+  const pageNum = Math.max(1, Number(page) || 1);
+  const where = {
+    AND: [
+      category !== "all" ? { category } : {},
+      q
+        ? {
+            OR: [{ name: { contains: q } }, { slug: { contains: q } }, { subcategory: { contains: q } }],
+          }
+        : {},
+    ],
+  };
+  const [total, items] = await Promise.all([
+    prisma.item.count({ where }),
+    prisma.item.findMany({
+      where,
+      orderBy: [{ buyPrice: "desc" }],
+      skip: (pageNum - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+  ]);
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="grid gap-6">
       <div>
-        <p className="text-xs tracking-[0.2em] text-gold">ARSENAL</p>
+        <p className="text-xs tracking-[0.2em] text-gold">MARKET DUMP</p>
         <h1 className="mt-1 text-3xl font-bold">装备与物价</h1>
-        <p className="mt-2 text-sm text-muted">可检索枪械、头盔、护甲、背包、胸挂、医疗与配件。价格为示例快照。</p>
+        <p className="mt-2 text-sm text-muted">Orzice 公开转储行情。AWM 等应为数十万级，不是约 10 万的旧示例价。</p>
       </div>
       <DisclaimerBanner />
       <form className="grid gap-3 rounded-sm border border-line bg-card p-4 md:grid-cols-[1fr_auto]" action="/items">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="搜索名称、英文短码或描述…"
-          className="rounded-sm border border-line bg-elev px-3 py-2 text-sm"
-        />
+        <input name="q" defaultValue={q} placeholder="搜索 AWM、头盔、5.56…" className="rounded-sm border border-line bg-elev px-3 py-2 text-sm" />
         <button className="rounded-sm bg-gold px-4 py-2 text-sm font-semibold text-[#1a1406]" type="submit">
           搜索
         </button>
@@ -65,47 +65,50 @@ export default async function ItemsPage({
           </Link>
         ))}
       </div>
-      <p className="text-xs text-muted">共 {items.length} 件</p>
-      <div className="overflow-x-auto rounded-sm border border-line">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-elev text-xs text-gold">
-            <tr>
-              <th className="px-3 py-2">装备</th>
-              <th className="px-3 py-2">分类</th>
-              <th className="px-3 py-2">买入</th>
-              <th className="px-3 py-2">出售</th>
-              <th className="px-3 py-2">战备</th>
-              <th className="px-3 py-2">假账系数</th>
-              <th className="px-3 py-2">性价</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="border-t border-line hover:bg-white/5">
-                <td className="px-3 py-2">
-                  <Link href={`/items/${item.slug}`} className="font-medium hover:text-gold">
-                    {item.name}
-                  </Link>
-                  <div className="mt-1">
-                    <ItemBadge rarity={item.rarity} level={item.level} />
-                  </div>
-                </td>
-                <td className="px-3 py-2 text-muted">
-                  {CATEGORY_LABEL[item.category]}
-                  {item.subcategory ? ` · ${item.subcategory}` : ""}
-                </td>
-                <td className="px-3 py-2 font-mono">{formatHaf(item.buyPrice)}</td>
-                <td className="px-3 py-2 font-mono">{formatHaf(item.sellPrice)}</td>
-                <td className="px-3 py-2 font-mono text-gold">{formatHaf(item.gearValue)}</td>
-                <td className="px-3 py-2 font-mono">{item.fakeAdjust.toFixed(2)}</td>
-                <td className="px-3 py-2 font-mono text-olive">
-                  {item.buyPrice ? (item.gearValue / item.buyPrice).toFixed(2) : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <p className="text-xs text-muted">
+        共 {total} 件 · 第 {pageNum}/{pages} 页
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => {
+          const spread = item.buyPrice - item.sellPrice;
+          const stats = JSON.parse(item.statsJson || "{}") as { 涨跌比?: string };
+          const change = Number(stats.涨跌比);
+          return (
+            <Link key={item.id} href={`/items/${item.slug}`} className="card-lift rounded-sm border border-line bg-card p-4">
+              <div className="flex items-start justify-between gap-2">
+                <h2 className="font-semibold leading-snug">{item.name}</h2>
+                <ItemBadge rarity={item.rarity} level={item.level} />
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                {CATEGORY_LABEL[item.category] ?? item.category}
+                {item.subcategory ? ` · ${item.subcategory}` : ""}
+              </p>
+              <p className="mt-3 font-mono text-xl text-gold">{formatHaf(item.buyPrice)}</p>
+              <p className="mt-1 text-xs text-muted">
+                估售 {formatHaf(item.sellPrice)} · 买卖差 {formatHaf(spread)}
+                {Number.isFinite(change)
+                  ? ` · 涨跌 ${change > 0 ? "+" : ""}${change}`
+                  : ""}
+              </p>
+            </Link>
+          );
+        })}
       </div>
+      {pages > 1 ? (
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: pages }, (_, i) => i + 1)
+            .slice(Math.max(0, pageNum - 4), pageNum + 3)
+            .map((n) => (
+              <Link
+                key={n}
+                href={`/items?category=${category}&page=${n}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                className={`rounded-sm border px-3 py-1 text-sm ${n === pageNum ? "border-gold text-gold" : "border-line"}`}
+              >
+                {n}
+              </Link>
+            ))}
+        </div>
+      ) : null}
     </div>
   );
 }

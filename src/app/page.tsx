@@ -10,14 +10,14 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [maps, guides, posts, loadouts, itemCount] = await Promise.all([
-    prisma.mapInfo.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.mapInfo.findMany({ where: { featured: true }, orderBy: { sortOrder: "asc" } }),
     prisma.guide.findMany({ orderBy: { publishedAt: "desc" }, take: 4 }),
     prisma.forumPost.findMany({ orderBy: { createdAt: "desc" }, take: 4, include: { _count: { select: { replies: true } } } }),
     prisma.loadout.findMany({
       where: { featured: true },
       include: { slots: { include: { item: true } } },
       orderBy: { budget: "asc" },
-      take: 3,
+      take: 6,
     }),
     prisma.item.count(),
   ]);
@@ -33,7 +33,7 @@ export default async function HomePage() {
               <span className="block text-xl font-medium text-sand/70 md:text-2xl">烽火地带卡战备与公开资料</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-7 text-muted">
-              按 11.25 / 18.75 / 55 / 60 / 78 万档位凑装，对比买入、出售与战备（含假账系数演示）。装备目录可检索，地图页写明入场门槛，攻略与匿名论坛帮你少送一次包。
+              按地图难度分开卡档：11 万机密、18.75 万机密、巴克什绝密 58 万、航天绝密 60 万、监狱 78 万。物价来自 Orzice 公开转储（非官方 API）。
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/loadout" className="rounded-sm bg-gold px-4 py-2 text-sm font-semibold text-[#1a1406] hover:bg-[#e0b32a]">
@@ -46,8 +46,8 @@ export default async function HomePage() {
           </div>
           <div className="grid grid-cols-2 gap-3 self-start">
             {[
-              ["装备样本", `${itemCount} 件`],
-              ["地图", `${maps.length} 张`],
+              ["公开行情", `${itemCount} 件`],
+              ["难度记录", `${maps.length} 条`],
               ["档位", "5 档门槛"],
               ["攻略", `${guides.length}+ 篇`],
             ].map(([k, v]) => (
@@ -78,7 +78,7 @@ export default async function HomePage() {
               <Link
                 key={kit.id}
                 href={`/loadout?kit=${kit.id}`}
-                className="grid gap-3 rounded-sm border border-line bg-card p-4 hover:border-gold/40"
+                className="card-lift grid gap-3 rounded-sm border border-line bg-card p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -109,13 +109,15 @@ export default async function HomePage() {
             全部地图
           </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {maps.map((map) => (
-            <Link key={map.slug} href={`/maps/${map.slug}`} className="rounded-sm border border-line bg-card p-4 hover:border-gold/40">
-              <p className="text-[11px] text-muted">{map.difficulty}</p>
-              <h3 className="mt-1 font-semibold">{map.name}</h3>
-              <p className="mt-2 font-mono text-gold">{formatHaf(map.entryMin)}</p>
-              <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted">{map.summary}</p>
+            <Link key={map.slug} href={`/maps/${map.slug}`} className="card-lift rounded-sm border border-line bg-card p-4">
+              <p className="text-[11px] text-gold">{map.difficulty}</p>
+              <h3 className="mt-1 font-semibold">
+                {map.name} · {map.difficulty}
+              </h3>
+              <p className="mt-2 font-mono text-gold">{map.entryMin > 0 ? formatHaf(map.entryMin) : "无数字门槛"}</p>
+              <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted">{map.entryNote}</p>
             </Link>
           ))}
         </div>
@@ -163,14 +165,14 @@ export default async function HomePage() {
         <h2 className="text-lg font-semibold">档位速查</h2>
         <div className="mt-3 grid gap-2 md:grid-cols-5">
           {BUDGET_TIERS.map((t) => (
-            <Link key={t.id} href={`/loadout?budget=${t.budget}`} className="rounded-sm border border-line bg-card p-3 hover:border-gold/40">
+            <Link key={t.id} href="/loadout" className="card-lift rounded-sm border border-line bg-card p-3">
               <p className="font-mono text-gold">{t.label}</p>
               <p className="mt-1 text-xs text-muted">{t.maps}</p>
             </Link>
           ))}
         </div>
         <p className="mt-4 text-xs text-muted">
-          装备分类覆盖{Object.values(CATEGORY_LABEL).join("、")}。演示数据可替换，不抓取第三方实时站。
+          分类覆盖{Object.values(CATEGORY_LABEL).join("、")}。行情来自 Orzice 公开转储，不声称官方实时接口。
         </p>
       </section>
     </div>

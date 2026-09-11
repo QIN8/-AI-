@@ -8,42 +8,59 @@ datasource db {
 }
 
 model Item {
-  id          String        @id @default(cuid())
-  slug        String        @unique
-  name        String
-  category    String
-  subcategory String        @default("")
-  rarity      String
-  level       Int           @default(1)
-  buyPrice    Int
-  sellPrice   Int
-  gearValue   Int
-  fakeAdjust  Float         @default(1.0)
-  weight      Float         @default(0)
-  description String        @default("")
-  statsJson   String        @default("{}")
-  slots       LoadoutSlot[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  externalId    Int?          @unique
+  name          String
+  category      String
+  subcategory   String        @default("")
+  rarity        String        @default("common")
+  level         Int           @default(1)
+  buyPrice      Int
+  sellPrice     Int
+  gearValue     Int
+  fakeAdjust    Float         @default(1.0)
+  weight        Float         @default(0)
+  description   String        @default("")
+  statsJson     String        @default("{}")
+  source        String        @default("orzice")
+  listedAt      DateTime?
+  slots         LoadoutSlot[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([category])
   @@index([name])
 }
 
+model PriceSnapshot {
+  id         String   @id @default("current")
+  source     String
+  sourceUrl  String
+  itemCount  Int
+  maxGetTime DateTime
+  fetchedAt  DateTime @default(now())
+}
+
 model MapInfo {
-  id         String   @id @default(cuid())
-  slug       String   @unique
-  name       String
-  mode       String   @default("烽火地带")
-  difficulty String
-  entryMin   Int
-  entryNote  String   @default("")
-  summary    String
-  tips       String
-  featured   Boolean  @default(false)
-  sortOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  groupSlug      String
+  name           String
+  mode           String   @default("烽火地带")
+  difficulty     String
+  difficultyKey  String
+  entryMin       Int
+  entryNote      String   @default("")
+  summary        String
+  tips           String
+  featured       Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  officialUrl    String   @default("https://df.qq.com/cp/a20240729directory/")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([groupSlug])
 }
 
 model Guide {
