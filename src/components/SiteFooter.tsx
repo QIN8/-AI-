@@ -8,7 +8,7 @@ export function SiteFooter() {
         <div>
           <p className="font-semibold text-gold">{SITE_NAME}</p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            面向《三角洲行动》烽火地带的玩家工具站。数据来自公开资料与示例快照，不代表腾讯或天美官方。
+            面向《三角洲行动》烽火地带的玩家工具站。行情来自 Orzice 公开转储，不代表腾讯或天美官方。
           </p>
         </div>
         <div className="text-sm text-muted">
@@ -31,8 +31,8 @@ export function SiteFooter() {
         <div className="text-sm leading-6 text-muted">
           <p className="mb-2 text-sand">声明</p>
           <p>
-            价格、战备、假账系数为社区风格演示数据，可在{" "}
-            <code className="text-gold/80">prisma/data</code> 中更新后重新种子。使用本站请遵守游戏 ToS，勿用于账号交易或作弊。
+            更新物价：覆盖 <code className="text-gold/80">prisma/data/orzice-price.json</code> 后{" "}
+            <code className="text-gold/80">npm run db:seed</code>。使用本站请遵守游戏 ToS，勿用于账号交易或作弊。
           </p>
         </div>
       </div>

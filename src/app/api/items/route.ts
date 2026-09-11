@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { ensureFreshPrices } from "@/lib/price-sync";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
+  void ensureFreshPrices({ wait: false });
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() ?? "";
   const category = searchParams.get("category") ?? "all";

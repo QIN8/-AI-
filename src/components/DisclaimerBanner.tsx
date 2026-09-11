@@ -2,8 +2,8 @@ export function DisclaimerBanner({ compact = false }: { compact?: boolean }) {
   return (
     <div className="rounded-sm border border-gold/30 bg-gold/8 px-3 py-2 text-xs leading-6 text-sand/80">
       {compact
-        ? "价格与战备为示例快照，非官方实时行情。"
-        : "装备买入价、出售价、战备价值与假账系数为社区风格示例快照，仅供凑装演示。未接入官方 API，也不保证与当前赛季交易行一致。地图门槛整理自公开资料，进图前以游戏内提示为准。"}
+        ? "行情来自 Orzice 公开转储，非官方实时 API。"
+        : "买入价来自 Orzice 公开转储 + 公开页覆盖，不是腾讯官方接口。卡战备里的「战备」暂按行情价合计；出售价按约 72% 估算。地图机密/绝密门槛分条记录（巴克什绝密 55 万），进图以游戏内提示为准。"}
     </div>
   );
 }

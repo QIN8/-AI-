@@ -1,30 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { ORZICE_PRICE_URL, ORZICE_REPO } from "../src/lib/constants";
+import { autoFillCheapest } from "../src/lib/loadout";
+import { applyLiveOverlays } from "../src/lib/overlays";
+import { estimatedSell, inferRarity, mapOrziceCategory, type OrziceRow } from "../src/lib/orzice";
+import { MAP_THRESHOLDS, THRESHOLD_SOURCE } from "../src/lib/thresholds";
 
 const prisma = new PrismaClient();
 
-type ItemSeed = {
-  slug: string;
-  name: string;
-  category: string;
-  subcategory?: string;
-  rarity: string;
-  level?: number;
-  buyPrice: number;
-  sellPrice: number;
-  gearValue: number;
-  fakeAdjust?: number;
-  weight?: number;
-  description?: string;
-  stats?: Record<string, string>;
-};
-
 type MapSeed = {
   slug: string;
+  groupSlug: string;
   name: string;
-  mode?: string;
   difficulty: string;
+  difficultyKey: string;
   entryMin: number;
   entryNote?: string;
   summary: string;
@@ -42,16 +32,6 @@ type GuideSeed = {
   featured?: boolean;
 };
 
-type LoadoutSeed = {
-  name: string;
-  budget: number;
-  mapSlug?: string;
-  style?: string;
-  note?: string;
-  featured?: boolean;
-  items: string[];
-};
-
 type ForumSeed = {
   title: string;
   nickname: string;
@@ -60,83 +40,67 @@ type ForumSeed = {
 };
 
 function loadJson<T>(name: string): T {
-  const file = join(__dirname, "data", name);
-  return JSON.parse(readFileSync(file, "utf8")) as T;
-}
-
-function slotForCategory(category: string, used: Record<string, number>): string {
-  const count = used[category] ?? 0;
-  used[category] = count + 1;
-  if (category === "gun") return count === 0 ? "primary" : "secondary";
-  if (category === "helmet") return "helmet";
-  if (category === "armor") return "armor";
-  if (category === "bag") return "bag";
-  if (category === "chest_rig") return "chest";
-  if (category === "med") return count === 0 ? "med1" : "med2";
-  return `extra-${count + 1}`;
+  return JSON.parse(readFileSync(join(__dirname, "data", name), "utf8")) as T;
 }
 
 async function main() {
-  const items = loadJson<ItemSeed[]>("items.json");
-  const maps = loadJson<MapSeed[]>("maps.json");
+  const rows = applyLiveOverlays(loadJson<OrziceRow[]>("orzice-price.json").filter((r) => r.name && Number(r.price) > 0));
+  const maps = loadJson<MapSeed[]>("maps.json").map((map) => ({
+    ...map,
+    entryMin: MAP_THRESHOLDS[map.slug] ?? map.entryMin,
+  }));
   const guides = loadJson<GuideSeed[]>("guides.json");
-  const loadouts = loadJson<LoadoutSeed[]>("loadouts.json");
   const forum = loadJson<ForumSeed[]>("forum.json");
 
-  for (const item of items) {
-    await prisma.item.upsert({
-      where: { slug: item.slug },
-      update: {
-        name: item.name,
-        category: item.category,
-        subcategory: item.subcategory ?? "",
-        rarity: item.rarity,
-        level: item.level ?? 1,
-        buyPrice: item.buyPrice,
-        sellPrice: item.sellPrice,
-        gearValue: item.gearValue,
-        fakeAdjust: item.fakeAdjust ?? 1,
-        weight: item.weight ?? 0,
-        description: item.description ?? "",
-        statsJson: JSON.stringify(item.stats ?? {}),
-      },
-      create: {
-        slug: item.slug,
-        name: item.name,
-        category: item.category,
-        subcategory: item.subcategory ?? "",
-        rarity: item.rarity,
-        level: item.level ?? 1,
-        buyPrice: item.buyPrice,
-        sellPrice: item.sellPrice,
-        gearValue: item.gearValue,
-        fakeAdjust: item.fakeAdjust ?? 1,
-        weight: item.weight ?? 0,
-        description: item.description ?? "",
-        statsJson: JSON.stringify(item.stats ?? {}),
-      },
-    });
-  }
+  await prisma.loadoutSlot.deleteMany();
+  await prisma.loadout.deleteMany({ where: { source: "seed" } });
+  await prisma.item.deleteMany();
+  await prisma.mapInfo.deleteMany();
+  await prisma.priceSnapshot.deleteMany();
+
+  await prisma.item.createMany({
+    data: rows.map((row) => {
+      const category = mapOrziceCategory(row.secondClassCN);
+      const { rarity, level } = inferRarity(row.name, row.price);
+      return {
+        slug: `orzice-${row.id}`,
+        externalId: row.id,
+        name: row.name,
+        category,
+        subcategory: row.secondClassCN,
+        rarity,
+        level,
+        buyPrice: Math.round(row.price),
+        sellPrice: estimatedSell(row.price),
+        gearValue: Math.round(row.price),
+        fakeAdjust: 1,
+        description: `公开行情转储（Orzice DeltaForcePrice），分类「${row.secondClassCN}」。转储无独立战备字段，战备暂按行情价计入。出售价按行情约 72% 估算，非游戏回收公式。`,
+        statsJson: JSON.stringify({ 来源分类: row.secondClassCN, 转储编号: String(row.id) }),
+        source: "orzice",
+        listedAt: row.is_get_time ? new Date(row.is_get_time * 1000) : null,
+      };
+    }),
+  });
+
+  await prisma.priceSnapshot.create({
+    data: {
+      id: "current",
+      source: `Orzice DeltaForcePrice 公开转储 · 含 live-overlays（${THRESHOLD_SOURCE}）`,
+      sourceUrl: ORZICE_PRICE_URL,
+      itemCount: rows.length,
+      maxGetTime: new Date(),
+      fetchedAt: new Date(),
+    },
+  });
 
   for (const map of maps) {
-    await prisma.mapInfo.upsert({
-      where: { slug: map.slug },
-      update: {
-        name: map.name,
-        mode: map.mode ?? "烽火地带",
-        difficulty: map.difficulty,
-        entryMin: map.entryMin,
-        entryNote: map.entryNote ?? "",
-        summary: map.summary,
-        tips: map.tips,
-        featured: map.featured ?? false,
-        sortOrder: map.sortOrder ?? 0,
-      },
-      create: {
+    await prisma.mapInfo.create({
+      data: {
         slug: map.slug,
+        groupSlug: map.groupSlug,
         name: map.name,
-        mode: map.mode ?? "烽火地带",
         difficulty: map.difficulty,
+        difficultyKey: map.difficultyKey,
         entryMin: map.entryMin,
         entryNote: map.entryNote ?? "",
         summary: map.summary,
@@ -169,36 +133,22 @@ async function main() {
   }
 
   const dbItems = await prisma.item.findMany();
-  const bySlug = new Map(dbItems.map((i) => [i.slug, i]));
-
-  for (const kit of loadouts) {
-    const existing = await prisma.loadout.findFirst({
-      where: { name: kit.name, source: "seed" },
-    });
-    if (existing) {
-      await prisma.loadoutSlot.deleteMany({ where: { loadoutId: existing.id } });
-      await prisma.loadout.delete({ where: { id: existing.id } });
-    }
-
-    const used: Record<string, number> = {};
-    const slots = kit.items
-      .map((slug) => {
-        const item = bySlug.get(slug);
-        if (!item) return null;
-        return { slot: slotForCategory(item.category, used), itemId: item.id };
-      })
-      .filter((s): s is { slot: string; itemId: string } => Boolean(s));
-
+  for (const map of maps.filter((m) => m.featured && m.entryMin > 0)) {
+    const slots = autoFillCheapest(dbItems, map.entryMin);
+    const entries = Object.entries(slots)
+      .filter((e): e is [string, string] => Boolean(e[1]))
+      .map(([slot, itemId]) => ({ slot, itemId }));
+    if (!entries.length) continue;
     await prisma.loadout.create({
       data: {
-        name: kit.name,
-        budget: kit.budget,
-        mapSlug: kit.mapSlug ?? "",
-        note: kit.note ?? "",
-        style: kit.style ?? "均衡",
-        featured: kit.featured ?? false,
+        name: `${map.name} · ${map.difficulty} 最低买入`,
+        budget: map.entryMin,
+        mapSlug: map.slug,
+        note: `按公开行情自动凑过 ${map.entryMin} 门槛（战备暂按行情计入，可留空槽）。请用交易行核对。`,
+        style: "最低买入",
+        featured: true,
         source: "seed",
-        slots: { create: slots },
+        slots: { create: entries },
       },
     });
   }
@@ -225,24 +175,17 @@ async function main() {
   await prisma.meta.upsert({
     where: { key: "priceDisclaimer" },
     update: {
-      value:
-        "装备买入价、出售价与战备价值均为社区风格示例快照，仅供功能演示，不是官方实时交易行，也未声称接入官方 API。赛季与热补丁后请以游戏内为准。",
+      value: `行情来自社区公开转储 ${ORZICE_REPO}，不是腾讯官方 API 或实时交易行保证。战备暂按行情价计入；出售为估算。`,
     },
     create: {
       key: "priceDisclaimer",
-      value:
-        "装备买入价、出售价与战备价值均为社区风格示例快照，仅供功能演示，不是官方实时交易行，也未声称接入官方 API。赛季与热补丁后请以游戏内为准。",
+      value: `行情来自社区公开转储 ${ORZICE_REPO}，不是腾讯官方 API 或实时交易行保证。战备暂按行情价计入；出售为估算。`,
     },
   });
 
-  await prisma.meta.upsert({
-    where: { key: "seededAt" },
-    update: { value: new Date().toISOString() },
-    create: { key: "seededAt", value: new Date().toISOString() },
-  });
-
+  const awm = rows.find((r) => r.name === "AWM狙击步枪");
   console.log(
-    `Seed OK: ${items.length} items, ${maps.length} maps, ${guides.length} guides, ${loadouts.length} loadouts`,
+    `Seed OK: ${rows.length} orzice items, AWM=${awm?.price ?? "?"}, bakshi-topsecret=${MAP_THRESHOLDS["bakshi-topsecret"]}, maps=${maps.length}`,
   );
 }
 

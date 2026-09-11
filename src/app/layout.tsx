@@ -1,37 +1,29 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Noto_Sans_SC } from "next/font/google";
+import { DataTicker } from "@/components/DataTicker";
+import { PriceSyncBeacon } from "@/components/PriceSyncBeacon";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
+import { getPriceSnapshot } from "@/lib/snapshot";
 import "./globals.css";
-
-const sans = Noto_Sans_SC({
-  weight: ["400", "500", "700"],
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sans",
-});
-
-const mono = IBM_Plex_Mono({
-  weight: ["400", "500"],
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-mono",
-});
 
 export const metadata: Metadata = {
   title: {
     default: SITE_NAME,
     template: `%s · ${SITE_NAME}`,
   },
-  description: `《三角洲行动》非官方${SITE_TAGLINE}。卡战备凑装、装备示例物价、地图门槛与玩家论坛。`,
+  description: `《三角洲行动》非官方${SITE_TAGLINE}。卡战备凑装、Orzice 公开行情转储、地图门槛与玩家论坛。`,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const snapshot = await getPriceSnapshot();
+
   return (
-    <html lang="zh-Hans" className={`${sans.variable} ${mono.variable}`}>
-      <body className={`${sans.className} min-h-screen antialiased`}>
+    <html lang="zh-Hans">
+      <body className="min-h-screen antialiased">
         <SiteHeader />
+        <PriceSyncBeacon />
+        <DataTicker snapshot={snapshot} />
         <main className="mx-auto w-full max-w-6xl px-4 py-8">{children}</main>
         <SiteFooter />
       </body>

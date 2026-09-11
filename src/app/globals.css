@@ -24,8 +24,8 @@
   --color-sand: var(--sand);
   --color-muted: var(--muted);
   --color-danger: var(--danger);
-  --font-sans: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-mono: "IBM Plex Mono", "ui-monospace", monospace;
+  --font-sans: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 html,
@@ -115,4 +115,23 @@ textarea,
 select,
 button {
   font: inherit;
+}
+
+.card-lift {
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--line));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.ticker {
+  animation: ticker-fade 480ms ease;
+}
+
+@keyframes ticker-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
