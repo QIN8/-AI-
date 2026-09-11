@@ -10,9 +10,10 @@ export function ReplyForm({ postId }: { postId: string }) {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const formEl = e.currentTarget;
     setError("");
     setPending(true);
-    const form = new FormData(e.currentTarget);
+    const form = new FormData(formEl);
     const res = await fetch(`/api/forum/${postId}/replies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -27,7 +28,7 @@ export function ReplyForm({ postId }: { postId: string }) {
       setError(data.error ?? "回复失败");
       return;
     }
-    e.currentTarget.reset();
+    formEl.reset();
     router.refresh();
   }
 

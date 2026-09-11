@@ -10,9 +10,10 @@ export function NewPostForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const formEl = e.currentTarget;
     setError("");
     setPending(true);
-    const form = new FormData(e.currentTarget);
+    const form = new FormData(formEl);
     const res = await fetch("/api/forum", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -28,9 +29,11 @@ export function NewPostForm() {
       setError(data.error ?? "发帖失败");
       return;
     }
-    e.currentTarget.reset();
-    router.push(`/forum/${data.id}`);
-    router.refresh();
+    formEl.reset();
+    if (data.id) {
+      router.push(`/forum/${data.id}`);
+      router.refresh();
+    }
   }
 
   return (
