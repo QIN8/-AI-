@@ -1,0 +1,21 @@
+{
+  "updated": "2026-09-11",
+  "source": "orzice V4/DIY + shushu.fan 公开页（2026-09-11 只读抓取）",
+  "tiers": [
+    { "id": "11w", "label": "11万", "budget": 110000, "maps": "大坝机密 / 长弓机密" },
+    { "id": "18w", "label": "18万", "budget": 180000, "maps": "巴克什机密 / 航天机密 / 永夜大坝" },
+    { "id": "55w", "label": "55万", "budget": 550000, "maps": "巴克什绝密" },
+    { "id": "60w", "label": "60万", "budget": 600000, "maps": "航天绝密" },
+    { "id": "78w", "label": "78万", "budget": 780000, "maps": "潮汐监狱绝密" }
+  ],
+  "maps": {
+    "dam-classified": 110000,
+    "dam-night": 180000,
+    "longbow-classified": 110000,
+    "bakshi-classified": 180000,
+    "bakshi-topsecret": 550000,
+    "spacecity-classified": 180000,
+    "spacecity-topsecret": 600000,
+    "tide-prison-topsecret": 780000
+  }
+}

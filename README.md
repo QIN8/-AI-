@@ -4,12 +4,12 @@
 
 仓库：[QIN8/-AI-](https://github.com/QIN8/-AI-)
 
-> 买入价来自 [Orzice/DeltaForcePrice](https://github.com/orzice/DeltaForcePrice) 公开转储，**不是官方 API**。转储无独立战备字段，卡战备里的战备暂按行情合计。地图机密/绝密分开记录（巴克什绝密 = 58 万）。进图以游戏内提示为准。不依赖 Google Fonts。
+> 买入价以 [Orzice/DeltaForcePrice](https://github.com/orzice/DeltaForcePrice) 公开转储为底，再用 orzice 公开页与 `prisma/data/live-overlays.json` 覆盖（**不是官方 API**）。转储无独立战备字段，卡战备里的战备暂按行情合计。地图机密/绝密分开记录（巴克什绝密 = **55 万 / 550000**，写在 `prisma/data/thresholds.json`）。进图以游戏内提示为准。不依赖 Google Fonts。
 
 ## 功能
 
-- **卡战备**：按地图+难度选门槛，槽位 DIY，最低买入凑档，本地 3 套 + 可选存服务器
-- **装备物价**：Orzice 转储（枪/甲/头/包/挂/弹/配件/钥匙/收集品），卡片展示行情与买卖差
+- **卡战备**：目标战备下拉（11/18/55/60/78 万），槽位 DIY（枪+配件、头、甲、胸挂、包、手枪、兑换），允许空槽与部门兑换物，生成配装并估算战备/花费/节省；本地 3 套 + 可选存服务器；可强制刷新物价
+- **装备物价**：GitHub `price.json` 为底 + orzice 公开页覆盖（枪/甲/头/包/挂/弹/配件/钥匙/收集品）
 - **地图**：每张图的普通/机密/绝密/永夜分开；嵌入官方地图工具（物资点图层为占位）
 - **攻略 / 论坛 / 首页**
 
@@ -54,8 +54,9 @@ npm start
 1. 可选 `ORZICE_TOKEN` → Orzice 工作台 `item_price_all`（需自行申请，本站不提供、不臆造 token）
 2. `https://raw.githubusercontent.com/orzice/DeltaForcePrice/master/price.json`（公开转储，可能停更）
 3. 仓库内 `prisma/data/orzice-price.json`（离线回退）
+4. 覆盖：orzice 公开 HTML（`/v/zhanbei?n=…`、列表页、弹药页）能解析到的当前价 + `prisma/data/live-overlays.json`（例如 AWM = 830999）
 
-顶栏「数据更新于」取转储 `is_get_time` 最大值；「本站同步于」是上次成功写入 SQLite 的时间。属性为**社区公开数据源 / Orzice 风格公开数据**，非官方、无合作关系。
+门槛改 `prisma/data/thresholds.json` 后执行 `npm run db:seed`。机密/绝密永不合并。
 
 ## 更新数据
 
@@ -63,8 +64,10 @@ npm start
 
 | 文件 | 内容 |
 | --- | --- |
-| `orzice-price.json` | Orzice 公开行情转储（主物价） |
-| `maps.json` | 按难度拆开的地图门槛 |
+| `orzice-price.json` | Orzice 公开行情转储（主物价底库） |
+| `live-overlays.json` | 高保真覆盖价（AWM 等） |
+| `thresholds.json` | 地图+难度入场门槛与 DIY 档位 |
+| `maps.json` | 按难度拆开的地图说明 |
 | `guides.json` | 攻略 Markdown |
 | `forum.json` | 仅在论坛为空时写入示例帖 |
 

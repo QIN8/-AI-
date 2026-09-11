@@ -33,7 +33,7 @@ export default async function HomePage() {
               <span className="block text-xl font-medium text-sand/70 md:text-2xl">烽火地带卡战备与公开资料</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-7 text-muted">
-              按地图难度分开卡档：11 万机密、18.75 万机密、巴克什绝密 58 万、航天绝密 60 万、监狱 78 万。物价来自 Orzice 公开转储（非官方 API）。
+              按地图难度分开卡档：11 万机密、18 万机密、巴克什绝密 55 万、航天绝密 60 万、监狱 78 万。物价以 GitHub 转储为底，再用 orzice 公开页与 live-overlays 覆盖（AWM ≈ 830999）。
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/loadout" className="rounded-sm bg-gold px-4 py-2 text-sm font-semibold text-[#1a1406] hover:bg-[#e0b32a]">

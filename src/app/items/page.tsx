@@ -42,7 +42,7 @@ export default async function ItemsPage({
       <div>
         <p className="text-xs tracking-[0.2em] text-gold">MARKET DUMP</p>
         <h1 className="mt-1 text-3xl font-bold">装备与物价</h1>
-        <p className="mt-2 text-sm text-muted">Orzice 公开转储行情。AWM 等应为数十万级，不是约 10 万的旧示例价。</p>
+        <p className="mt-2 text-sm text-muted">GitHub 转储为底，orzice 公开页与 live-overlays 覆盖。AWM 应约为 83 万（830999），不是约 10 万的旧示例。</p>
       </div>
       <DisclaimerBanner />
       <form className="grid gap-3 rounded-sm border border-line bg-card p-4 md:grid-cols-[1fr_auto]" action="/items">

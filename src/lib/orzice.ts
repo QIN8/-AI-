@@ -9,7 +9,6 @@ export type OrziceRow = {
 };
 
 const GUNS = new Set([
-  "手枪",
   "冲锋枪",
   "步枪",
   "精确射手步枪",
@@ -39,6 +38,7 @@ export function mapOrziceCategory(secondClassCN: string): string {
   if (secondClassCN === "消耗品") return "med";
   if (secondClassCN === "钥匙") return "key";
   if (secondClassCN === "收集品") return "loot";
+  if (secondClassCN === "手枪") return "pistol";
   if (GUNS.has(secondClassCN)) return "gun";
   if (ACCESSORIES.has(secondClassCN)) return "accessory";
   if (/mm|Gauge|ACP|AE|Magnum|箭矢/i.test(secondClassCN)) return "ammo";

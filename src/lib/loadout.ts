@@ -29,6 +29,12 @@ export type KitTotals = {
   weight: number;
   count: number;
   ratio: number;
+  savings: number;
+};
+
+export type FillOptions = {
+  allowEmpty?: boolean;
+  allowExchange?: boolean;
 };
 
 export function emptyKit(): KitSlots {
@@ -65,6 +71,7 @@ export function summarizeKit(slots: KitSlots, items: ItemLite[], fakeMode = fals
     weight,
     count,
     ratio: buy > 0 ? effective / buy : 0,
+    savings: effective - buy,
   };
 }
 
@@ -76,17 +83,29 @@ function pool(items: ItemLite[], categories: readonly string[], used: Set<string
   return items.filter((i) => inSlot(i, categories) && !used.has(i.id) && i.buyPrice > 0 && i.gearValue > 0);
 }
 
-/** 最低买入凑档：先填必备槽最便宜件，再按「每哈夫币战备」补齐到门槛，最后尽量降本。 */
-export function autoFillCheapest(items: ItemLite[], budget: number): KitSlots {
+function combatPool(items: ItemLite[], allowExchange: boolean) {
+  return items.filter((i) => {
+    if (i.category === "key") return false;
+    if (i.category === "loot") return allowExchange;
+    return true;
+  });
+}
+
+/** 最低买入凑档：可留空槽、可选兑换物，再按「每哈夫币战备」补齐到门槛。 */
+export function autoFillCheapest(items: ItemLite[], budget: number, opts: FillOptions = {}): KitSlots {
+  const allowEmpty = opts.allowEmpty ?? true;
+  const allowExchange = opts.allowExchange ?? true;
   const kit = emptyKit();
   const used = new Set<string>();
-  const combat = items.filter((i) => !["loot", "key"].includes(i.category));
+  const combat = combatPool(items, allowExchange);
 
-  for (const slot of LOADOUT_SLOTS.filter((s) => s.essential)) {
-    const pick = pool(combat, slot.categories, used).sort((a, b) => a.buyPrice - b.buyPrice || b.gearValue - a.gearValue)[0];
-    if (pick) {
-      kit[slot.id] = pick.id;
-      used.add(pick.id);
+  if (!allowEmpty) {
+    for (const slot of LOADOUT_SLOTS.filter((s) => s.preferred)) {
+      const pick = pool(combat, slot.categories, used).sort((a, b) => a.buyPrice - b.buyPrice || b.gearValue - a.gearValue)[0];
+      if (pick) {
+        kit[slot.id] = pick.id;
+        used.add(pick.id);
+      }
     }
   }
 
@@ -98,7 +117,11 @@ export function autoFillCheapest(items: ItemLite[], budget: number): KitSlots {
     type Move = { buyDelta: number; gearDelta: number; apply: () => void };
     const moves: Move[] = [];
 
-    const empty = LOADOUT_SLOTS.find((s) => !kit[s.id]);
+    const empty = LOADOUT_SLOTS.find((s) => {
+      if (kit[s.id]) return false;
+      if (s.id === "exchange" && !allowExchange) return false;
+      return true;
+    });
     if (empty) {
       const pick = pool(combat, empty.categories, used).sort(
         (a, b) => b.gearValue / Math.max(1, a.buyPrice) - a.gearValue / Math.max(1, b.buyPrice) || a.buyPrice - b.buyPrice,

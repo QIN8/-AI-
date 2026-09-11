@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ORZICE_PRICE_URL } from "@/lib/constants";
+import { applyLiveOverlays, loadLiveOverlays, mergeOverlays } from "@/lib/overlays";
 import { estimatedSell, inferRarity, mapOrziceCategory, type OrziceRow } from "@/lib/orzice";
+import { scrapeOrzicePublicPages } from "@/lib/orzice-scrape";
 import { prisma } from "@/lib/prisma";
 import { getPriceSnapshot, type SnapshotDTO } from "@/lib/snapshot";
 
@@ -115,9 +117,25 @@ async function collectRows(): Promise<{ rows: OrziceRow[]; source: string; sourc
   };
 }
 
-async function persistRows(rows: OrziceRow[], source: string, sourceUrl: string) {
+async function withLiveOverlays(rows: OrziceRow[]): Promise<{ rows: OrziceRow[]; overlayCount: number; liveCount: number }> {
+  let live: ReturnType<typeof loadLiveOverlays> = [];
+  try {
+    live = await scrapeOrzicePublicPages();
+  } catch {
+    live = [];
+  }
+  const pinned = loadLiveOverlays();
+  const overlays = mergeOverlays(live, pinned);
+  return {
+    rows: applyLiveOverlays(rows, overlays),
+    overlayCount: overlays.length,
+    liveCount: live.length,
+  };
+}
+
+async function persistRows(rows: OrziceRow[], source: string, sourceUrl: string, liveTouched = false) {
   const times = rows.map((r) => r.is_get_time).filter((t) => t > 0);
-  const maxGet = times.length ? Math.max(...times) : Math.floor(Date.now() / 1000);
+  const maxGet = liveTouched ? Math.floor(Date.now() / 1000) : times.length ? Math.max(...times) : Math.floor(Date.now() / 1000);
 
   for (let i = 0; i < rows.length; i += 80) {
     const chunk = rows.slice(i, i + 80);
@@ -125,7 +143,7 @@ async function persistRows(rows: OrziceRow[], source: string, sourceUrl: string)
       chunk.map((row) => {
         const category = mapOrziceCategory(row.secondClassCN);
         const { rarity, level } = inferRarity(row.name, row.price);
-        const gearValue = Number.isFinite(row.zbPrice) && (row.zbPrice as number) > 0 ? Math.round(row.zbPrice as number) : Math.round(row.price);
+        const gearValue = Math.round(row.price);
         const stats: Record<string, string> = {
           来源分类: row.secondClassCN,
           转储编号: String(row.id),
@@ -199,7 +217,14 @@ export async function refreshPrices(): Promise<SyncResult> {
   try {
     const collected = await collectRows();
     tried.push(...collected.tried);
-    await persistRows(collected.rows, collected.source, collected.sourceUrl);
+    const overlaid = await withLiveOverlays(collected.rows);
+    if (overlaid.liveCount) tried.push(`orzice-html:${overlaid.liveCount}`);
+    if (overlaid.overlayCount) tried.push(`overlays:${overlaid.overlayCount}`);
+    const source =
+      overlaid.overlayCount > 0
+        ? `${collected.source} · ${overlaid.overlayCount} 条公开页/配置覆盖`
+        : collected.source;
+    await persistRows(overlaid.rows, source, collected.sourceUrl, overlaid.overlayCount > 0);
     return {
       ok: true,
       didRefresh: true,

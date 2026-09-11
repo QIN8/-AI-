@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ORZICE_PRICE_URL, ORZICE_REPO } from "../src/lib/constants";
 import { autoFillCheapest } from "../src/lib/loadout";
+import { applyLiveOverlays } from "../src/lib/overlays";
 import { estimatedSell, inferRarity, mapOrziceCategory, type OrziceRow } from "../src/lib/orzice";
+import { MAP_THRESHOLDS, THRESHOLD_SOURCE } from "../src/lib/thresholds";
 
 const prisma = new PrismaClient();
 
@@ -42,8 +44,11 @@ function loadJson<T>(name: string): T {
 }
 
 async function main() {
-  const rows = loadJson<OrziceRow[]>("orzice-price.json").filter((r) => r.name && Number(r.price) > 0);
-  const maps = loadJson<MapSeed[]>("maps.json");
+  const rows = applyLiveOverlays(loadJson<OrziceRow[]>("orzice-price.json").filter((r) => r.name && Number(r.price) > 0));
+  const maps = loadJson<MapSeed[]>("maps.json").map((map) => ({
+    ...map,
+    entryMin: MAP_THRESHOLDS[map.slug] ?? map.entryMin,
+  }));
   const guides = loadJson<GuideSeed[]>("guides.json");
   const forum = loadJson<ForumSeed[]>("forum.json");
 
@@ -52,9 +57,6 @@ async function main() {
   await prisma.item.deleteMany();
   await prisma.mapInfo.deleteMany();
   await prisma.priceSnapshot.deleteMany();
-
-  const times = rows.map((r) => r.is_get_time).filter((t) => Number.isFinite(t) && t > 0);
-  const maxGet = Math.max(...times, 0);
 
   await prisma.item.createMany({
     data: rows.map((row) => {
@@ -83,10 +85,10 @@ async function main() {
   await prisma.priceSnapshot.create({
     data: {
       id: "current",
-      source: "Orzice DeltaForcePrice 公开转储",
+      source: `Orzice DeltaForcePrice 公开转储 · 含 live-overlays（${THRESHOLD_SOURCE}）`,
       sourceUrl: ORZICE_PRICE_URL,
       itemCount: rows.length,
-      maxGetTime: new Date(maxGet * 1000),
+      maxGetTime: new Date(),
       fetchedAt: new Date(),
     },
   });
@@ -142,7 +144,7 @@ async function main() {
         name: `${map.name} · ${map.difficulty} 最低买入`,
         budget: map.entryMin,
         mapSlug: map.slug,
-        note: `按 Orzice 行情自动凑过 ${map.entryMin} 门槛（战备暂按行情计入）。请用交易行核对。`,
+        note: `按公开行情自动凑过 ${map.entryMin} 门槛（战备暂按行情计入，可留空槽）。请用交易行核对。`,
         style: "最低买入",
         featured: true,
         source: "seed",
@@ -181,7 +183,10 @@ async function main() {
     },
   });
 
-  console.log(`Seed OK: ${rows.length} orzice items, ${maps.length} map difficulties, snapshot ${new Date(maxGet * 1000).toISOString()}`);
+  const awm = rows.find((r) => r.name === "AWM狙击步枪");
+  console.log(
+    `Seed OK: ${rows.length} orzice items, AWM=${awm?.price ?? "?"}, bakshi-topsecret=${MAP_THRESHOLDS["bakshi-topsecret"]}, maps=${maps.length}`,
+  );
 }
 
 main()

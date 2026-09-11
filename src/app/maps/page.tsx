@@ -20,7 +20,7 @@ export default async function MapsPage() {
         <p className="text-xs tracking-[0.2em] text-gold">MAPS</p>
         <h1 className="mt-1 text-3xl font-bold">地图与入场门槛</h1>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-muted">
-          每一张图的普通 / 机密 / 绝密 / 永夜都是独立记录。巴克什机密 18.75 万，绝密 58 万，不要合成一个数。
+          每一张图的普通 / 机密 / 绝密 / 永夜都是独立记录。巴克什机密 18 万，绝密 55 万，不要合成一个数。数字写在 prisma/data/thresholds.json。
         </p>
       </div>
 

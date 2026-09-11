@@ -12,7 +12,7 @@ export default async function LoadoutPage({
   const params = await searchParams;
   const [items, maps, featured, selected] = await Promise.all([
     prisma.item.findMany({
-      where: { category: { notIn: ["loot"] } },
+      where: { category: { notIn: ["key"] } },
       orderBy: [{ category: "asc" }, { buyPrice: "asc" }],
     }),
     prisma.mapInfo.findMany({ orderBy: { sortOrder: "asc" } }),
@@ -32,7 +32,7 @@ export default async function LoadoutPage({
         <p className="text-xs tracking-[0.2em] text-gold">DIY LOADOUT</p>
         <h1 className="mt-1 text-3xl font-bold">卡战备 · 自己凑档</h1>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-muted">
-          先选地图和难度（机密 / 绝密分开），再从公开行情库往槽位里塞装备。实时看买入、估算出售、战备（按行情计入）和距门槛差额。一键「最低买入凑档」或保存 3 套本地方案。
+          目标战备下拉 11/18/55/60/78 万，槽位对齐 orzice DIY（枪+配件、头、甲、胸挂、包、手枪、兑换）。允许空槽与部门兑换物。生成配装后看战备 / 花费 / 节省。
         </p>
       </div>
       <LoadoutPlanner
